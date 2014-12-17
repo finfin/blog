@@ -1,0 +1,117 @@
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title>Shadow</title><description>Things about web developments</description><link>http://localhost:2368/</link><generator>Ghost 0.5</generator><lastBuildDate>Wed, 17 Dec 2014 11:07:04 GMT</lastBuildDate><atom:link href="http://localhost:2368/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title>React.js 開發環境設定</title><description>&lt;h2 id=""&gt;簡介&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href="http://facebook.github.io/react/"&gt;React&lt;/a&gt; 可說是最近最熱門的一個 Library，用過之後都會被其簡單的程式流程所吸引。如果對 React 還不熟的可參考附錄，或直接到官網看教學。在這，就來分享一下一些環境設定，讓開發更有效率。 &lt;/p&gt;
+
+&lt;h2 id=""&gt;材料準備&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;安裝好 react-tools 的電腦一台&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class="language-bash"&gt;$ npm install -g react-tools
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;支援 Grunt 的 Project 一個（Gulp 也 ok 設定很簡單沒有差很多自己修改一下） &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=""&gt;目錄結構&lt;/h2&gt;
+
+&lt;p&gt;一般的目錄結構大概是像這樣：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;└── src
+     └── js
+         ├── app
+         │   ├── collections
+         │   ├── config
+         │   ├── controllers
+         │   ├── models
+         │   └── views
+         └── vendor
+             ├── backbone
+             |   ...
+             └── requirejs
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;React 由於有自己的 jsx 檔案格式，目錄結構改成這樣： （變化不大只是把 js/app/views 拿掉，因為被 jsx 取代）  &lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;└── src
+     ├── js
+     |   ├── app
+     |   │   ├── collections
+     |   │   ├── config
+     |   │   ├── controllers
+     |   │   └── models
+     |   └── vendor
+     └── jsx
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;我的 jsx 目錄長得像這樣：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;└── src
+     └── jsx
+         ├── atom
+         ├── molecule
+         ├── organism
+         └── template
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;這樣子的分法是因為本身有使用 styleguide 工具——&lt;a href="http://patternlab.io/"&gt;PatternLab&lt;/a&gt;，React 本身的元件概念跟 PatternLab 不謀而合，用一樣的目錄結構也可以方便樣式的對照。&lt;/p&gt;
+
+&lt;h2 id="grunttask"&gt;Grunt Task&lt;/h2&gt;
+
+&lt;p&gt;Grunt Task 需要兩個部分： &lt;strong&gt;A.把JSX 檔案編譯成 JS&lt;/strong&gt; , &lt;strong&gt;B.JSX 檔案一旦修改就呼叫 A&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;把 JSX 檔案編譯成 JS:&lt;/strong&gt; 在 Gruntfile.js 裡增加這樣一個task&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class="language-javascript"&gt;grunt.initConfig({  
+    shell: {
+        jsx: {
+            command: [
+                'jsx -x jsx src/jsx/ src/js/app/views/',
+                'rm -rf src/js/app/views/.module-cache/'
+            ].join(' &amp;amp;&amp;amp; '),
+            stdout: true,
+            failOnError: true
+        }
+    }
+});
+
+grunt.loadNpmTasks('grunt-shell');  
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;這是一個 shell command，所以會需要 &lt;code&gt;grunt-shell&lt;/code&gt;，內容就是執行 jsx 編譯並輸出至 &lt;code&gt;src/js/app/views/&lt;/code&gt; 目錄下，第二個 command 僅只是把編譯過程的 cache 檔案清掉。（就是這個步驟需要 react-tools）&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;JSX 檔案一旦修改就呼叫 A:&lt;/strong&gt; ——有了 JSX 轉 JS 的task ，再來就是用 watch 讓這動作更自動化 &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class="language-javascript"&gt;grunt.initConfig({  
+    shell: {
+        jsx: {
+            ...
+        }
+    },
+    watch: {
+        jsx: {
+            files: 'jsx/**/*.jsx',
+            tasks: ['shell:jsx']
+        }
+    }
+});
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;有了這兩個 task 之後，只要 &lt;code&gt;grunt watch&lt;/code&gt;，當你一修改 jsx 檔案系統就會自動幫你編譯成 js，之後就跟一般開發流程沒兩樣了。&lt;/p&gt;
+
+&lt;h2 id=""&gt;附註&lt;/h2&gt;
+
+&lt;h3 id="react"&gt;一些 React 的資源：&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://github.com/enaqx/awesome-react"&gt;Awesome React&lt;/a&gt;: React 資源彙整&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://www.safaribooksonline.com/library/view/developing-a-react/9781939902122/"&gt;Developing a React Edge: The JavaScript Library for User Interfaces&lt;/a&gt;: eBook&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://www.youtube.com/watch?v=UBWLr2i4MIg"&gt;JSDC 2014 #06 react/flux in Action&lt;/a&gt; / Jemery Lu&lt;br&gt;
+投影片：&lt;a href="https://speakerdeck.com/coodoo/flux-in-action-shi-zhan-jing-yan-fen-xiang"&gt;React/Flux in Action 實戰經驗分享&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</description><link>http://localhost:2368/react-js-kai-fa-huan-jing-she-ding/</link><guid isPermaLink="false">473f7464-ff47-47ff-9bea-80c777490c8c</guid><dc:creator>Fin Chen</dc:creator><pubDate>Wed, 17 Dec 2014 09:06:14 GMT</pubDate></item></channel></rss>
